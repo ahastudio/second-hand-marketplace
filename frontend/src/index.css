@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* Tailwind v4 preflight는 버튼의 pointer 커서를 제거하므로 상호작용 요소에 다시 지정한다 */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  select:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+}

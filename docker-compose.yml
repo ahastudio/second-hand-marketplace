@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: marketplace
+      POSTGRES_USER: marketplace
+      POSTGRES_PASSWORD: marketplace
+    ports:
+      - "25803:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # E2E 전용 DB: 개발 데이터와 분리, 컨테이너 재시작 시 초기화(tmpfs)
+  postgres-e2e:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: marketplace_e2e
+      POSTGRES_USER: marketplace
+      POSTGRES_PASSWORD: marketplace
+    ports:
+      - "25802:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+
+volumes:
+  pgdata:
