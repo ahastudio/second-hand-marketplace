@@ -1,0 +1,15 @@
+remote_work_dir: /opt/second-hand-marketplace
+image_platform: linux/amd64
+
+# 프론트엔드가 호출하는 백엔드 주소(빌드 시 주입)와 백엔드가 허용할 프론트엔드 출처
+# 실제 도메인은 Git이 무시하는 inventory.ini의 호스트 변수로 지정한다(inventory.ini.example 참고).
+api_base_url: "{{ marketplace_api_base_url | default('https://api.example.com') }}"
+cors_allowed_origins: "{{ marketplace_web_origin | default('https://app.example.com') }}"
+
+# 호스트에 포트를 게시할 주소. 같은 호스트의 리버스 프록시만 쓴다면 127.0.0.1로 좁히는 것이 가장 안전하다.
+publish_host: "{{ marketplace_publish_host | default('0.0.0.0') }}"
+
+db_name: marketplace
+db_username: marketplace
+db_password: "{{ lookup('ansible.builtin.env', 'MARKETPLACE_DB_PASSWORD') }}"
+app_jwt_secret: "{{ lookup('ansible.builtin.env', 'MARKETPLACE_APP_JWT_SECRET') }}"

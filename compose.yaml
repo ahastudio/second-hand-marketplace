@@ -10,7 +10,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # E2E 전용 DB: 개발 데이터와 분리, 컨테이너 재시작 시 초기화(tmpfs)
+  # E2E 테스트 전용 DB: 개발 데이터와 분리, 컨테이너 재시작 시 초기화(tmpfs)
   postgres-e2e:
     image: postgres:16
     environment:

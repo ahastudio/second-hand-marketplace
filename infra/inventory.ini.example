@@ -1,0 +1,2 @@
+[marketplace]
+marketplace-server ansible_host=YOUR_SERVER_IP ansible_user=deploy marketplace_api_base_url=https://api.example.com marketplace_web_origin=https://app.example.com

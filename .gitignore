@@ -199,3 +199,13 @@ application-local.*
 # 개발 중 임시 파일
 *.tmp
 .scratch/
+
+# 실제 서버 주소, 배포 비밀값, 로컬 Docker 이미지
+infra/inventory.ini
+infra/.env
+infra/.env.*
+!infra/.env.j2
+infra/.vault-password
+infra/*.pem
+infra/*.key
+infra/.artifacts/

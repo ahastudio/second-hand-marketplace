@@ -1,0 +1,178 @@
+---
+- name: Deploy marketplace application
+  hosts: marketplace
+  become: true
+  vars_files:
+    - vars.yml
+  pre_tasks:
+    - name: Require strong deployment secrets
+      ansible.builtin.assert:
+        that:
+          - db_password | length >= 64
+          - app_jwt_secret | length >= 64
+        fail_msg: Set MARKETPLACE_DB_PASSWORD and MARKETPLACE_APP_JWT_SECRET to random 32-byte hex values.
+      no_log: true
+  tasks:
+    - name: Check existing Docker Compose
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - version
+      register: compose_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install Docker and Compose plugin
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+        state: present
+        update_cache: true
+      when: compose_check.rc != 0
+
+    - name: Start Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+      when: compose_check.rc != 0
+
+    - name: Create local image artifact directory
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/.artifacts"
+        state: directory
+        mode: "0700"
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Build backend image
+      ansible.builtin.command:
+        argv:
+          - docker
+          - build
+          - --platform
+          - "{{ image_platform }}"
+          - --tag
+          - marketplace-backend:latest
+          - --file
+          - backend/Dockerfile
+          - backend
+      args:
+        chdir: "{{ playbook_dir }}/.."
+      delegate_to: localhost
+      become: false
+
+    - name: Build frontend image
+      ansible.builtin.command:
+        argv:
+          - docker
+          - build
+          - --platform
+          - "{{ image_platform }}"
+          - --tag
+          - marketplace-frontend:latest
+          - --build-arg
+          - "VITE_API_BASE_URL={{ api_base_url }}"
+          - --file
+          - frontend/Dockerfile
+          - frontend
+      args:
+        chdir: "{{ playbook_dir }}/.."
+      delegate_to: localhost
+      become: false
+
+    - name: Save application images
+      ansible.builtin.command:
+        argv:
+          - docker
+          - save
+          - --output
+          - "{{ playbook_dir }}/.artifacts/marketplace-images.tar"
+          - marketplace-backend:latest
+          - marketplace-frontend:latest
+      delegate_to: localhost
+      become: false
+
+    - name: Create remote deployment directory
+      ansible.builtin.file:
+        path: "{{ remote_work_dir }}"
+        state: directory
+        mode: "0750"
+
+    - name: Copy application images
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/.artifacts/marketplace-images.tar"
+        dest: "{{ remote_work_dir }}/marketplace-images.tar"
+        mode: "0600"
+
+    - name: Copy production Compose file
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/compose.yaml"
+        dest: "{{ remote_work_dir }}/compose.yaml"
+        mode: "0644"
+
+    - name: Remove legacy compose.yml
+      ansible.builtin.file:
+        path: "{{ remote_work_dir }}/compose.yml"
+        state: absent
+
+    - name: Install private Compose environment file
+      ansible.builtin.template:
+        src: .env.j2
+        dest: "{{ remote_work_dir }}/.env"
+        mode: "0600"
+      no_log: true
+
+    - name: Load application images
+      ansible.builtin.command:
+        argv:
+          - docker
+          - load
+          - --input
+          - marketplace-images.tar
+      args:
+        chdir: "{{ remote_work_dir }}"
+
+    - name: Validate Compose configuration
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --env-file
+          - .env
+          - --file
+          - compose.yaml
+          - config
+          - --quiet
+      args:
+        chdir: "{{ remote_work_dir }}"
+
+    - name: Start application services
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --env-file
+          - .env
+          - --file
+          - compose.yaml
+          - up
+          - --detach
+          - --remove-orphans
+      args:
+        chdir: "{{ remote_work_dir }}"
+
+    - name: Remove uploaded image archive
+      ansible.builtin.file:
+        path: "{{ remote_work_dir }}/marketplace-images.tar"
+        state: absent
+
+    - name: Remove local image archive
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/.artifacts/marketplace-images.tar"
+        state: absent
+      delegate_to: localhost
+      become: false
