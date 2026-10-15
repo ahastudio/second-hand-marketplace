@@ -8,7 +8,7 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:25800', trace: 'retain-on-failure' },
   webServer: [
     {
-      // E2E 전용 DB(postgres-e2e, 25802)에 연결된 백엔드
+      // E2E 테스트 전용 DB(postgres-e2e, 25802)에 연결된 백엔드
       command: 'cd ../backend && ./gradlew bootRun',
       port: 25801,
       reuseExistingServer: !process.env.CI,

@@ -1,41 +1,25 @@
-import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
-import { useAuth } from '../auth'
+import { useAuth } from '../authContext'
+import { useApiResource } from '../hooks/useApiResource'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import type { Product } from '../products'
-import { useDocumentTitle } from '../useDocumentTitle'
-import ProductForm from './ProductForm'
+import ProductForm, { type ProductInput } from './ProductForm'
 
 export default function ProductEditPage() {
   useDocumentTitle('상품 수정')
   const { id } = useParams()
   const { token } = useAuth()
   const navigate = useNavigate()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { resource: product, errorMessage } = useApiResource<Product>(`/api/products/${id}`)
 
-  useEffect(() => {
-    let cancelled = false
-    api<Product>(`/api/products/${id}`)
-      .then((p) => !cancelled && setProduct(p))
-      .catch((e: Error) => !cancelled && setError(e.message))
-    return () => {
-      cancelled = true
-    }
-  }, [id])
+  async function saveProduct(input: ProductInput) {
+    await api<Product>(`/api/products/${id}`, { method: 'PUT', token, body: input })
+    navigate(`/products/${id}`)
+  }
 
-  if (error) return <p>{error}</p>
+  if (errorMessage) return <p>{errorMessage}</p>
   if (!product) return <p>불러오는 중…</p>
 
-  return (
-    <ProductForm
-      heading="상품 수정"
-      submitLabel="저장"
-      initial={product}
-      onSubmit={async (body) => {
-        await api<Product>(`/api/products/${id}`, { method: 'PUT', token, body })
-        navigate(`/products/${id}`)
-      }}
-    />
-  )
+  return <ProductForm heading="상품 수정" submitLabel="저장" initial={product} onSubmit={saveProduct} />
 }

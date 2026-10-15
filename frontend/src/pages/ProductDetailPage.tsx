@@ -1,61 +1,56 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
-import { useAuth } from '../auth'
-import { formatPrice, STATUS_LABEL, type Product, type ProductStatus } from '../products'
-import StatusBadge from '../StatusBadge'
+import { useAuth } from '../authContext'
+import ErrorAlert from '../components/ErrorAlert'
+import SellerControls from '../components/SellerControls'
+import StatusBadge from '../components/StatusBadge'
+import { useApiResource } from '../hooks/useApiResource'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { formatPrice, type Product, type ProductStatus } from '../products'
 import { ui } from '../ui'
-import { useDocumentTitle } from '../useDocumentTitle'
+
+function LoadFailure({ message }: { message: string }) {
+  return (
+    <div className={`${ui.card} flex flex-col items-center gap-3 py-16 text-center`}>
+      <p className="font-semibold text-slate-700">{message}</p>
+      <Link to="/" className={ui.btnSecondary}>목록으로 돌아가기</Link>
+    </div>
+  )
+}
 
 export default function ProductDetailPage() {
   const { id } = useParams()
   const { user, token } = useAuth()
   const navigate = useNavigate()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
+  const { resource: product, setResource: setProduct, errorMessage } = useApiResource<Product>(`/api/products/${id}`)
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    api<Product>(`/api/products/${id}`)
-      .then((p) => !cancelled && setProduct(p))
-      .catch((e: Error) => !cancelled && setError(e.message))
-    return () => {
-      cancelled = true
-    }
-  }, [id])
+  useDocumentTitle(product?.title ?? errorMessage ?? undefined)
 
-  useDocumentTitle(product?.title ?? error ?? undefined)
-
-  async function onDelete() {
+  async function deleteProduct() {
     if (!window.confirm('이 상품을 삭제할까요?')) return
     try {
       await api(`/api/products/${id}`, { method: 'DELETE', token })
       navigate('/')
-    } catch (e) {
-      setActionError((e as Error).message)
+    } catch (error) {
+      setActionErrorMessage((error as Error).message)
     }
   }
 
-  async function onStatusChange(status: ProductStatus) {
-    setActionError(null)
+  async function changeStatus(status: ProductStatus) {
+    setActionErrorMessage(null)
     try {
       setProduct(await api<Product>(`/api/products/${id}/status`, { method: 'PATCH', token, body: { status } }))
-    } catch (e) {
-      setActionError((e as Error).message)
+    } catch (error) {
+      setActionErrorMessage((error as Error).message)
     }
   }
 
-  if (error)
-    return (
-      <div className={`${ui.card} flex flex-col items-center gap-3 py-16 text-center`}>
-        <p className="font-semibold text-slate-700">{error}</p>
-        <Link to="/" className={ui.btnSecondary}>목록으로 돌아가기</Link>
-      </div>
-    )
+  if (errorMessage) return <LoadFailure message={errorMessage} />
   if (!product) return <p className="animate-pulse text-slate-400">불러오는 중…</p>
 
-  const isOwner = user?.id === product.seller.id
+  const isSeller = user?.id === product.seller.id
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,28 +70,8 @@ export default function ProductDetailPage() {
           <span aria-hidden="true">·</span>
           <time dateTime={product.createdAt}>{new Date(product.createdAt).toLocaleDateString('ko-KR')}</time>
         </p>
-
-        {isOwner && (
-          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-4">
-            <label className="flex items-center gap-2 whitespace-nowrap text-sm font-medium text-slate-700">
-              판매 상태
-              <select
-                value={product.status}
-                onChange={(e) => onStatusChange(e.target.value as ProductStatus)}
-                className={`${ui.input} w-auto py-1.5`}
-              >
-                {(Object.keys(STATUS_LABEL) as ProductStatus[]).map((s) => (
-                  <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-                ))}
-              </select>
-            </label>
-            <div className="ml-auto flex gap-2">
-              <Link to={`/products/${product.id}/edit`} className={ui.btnSecondary}>수정</Link>
-              <button type="button" onClick={onDelete} className={ui.btnDanger}>삭제</button>
-            </div>
-          </div>
-        )}
-        {actionError && <p role="alert" className={ui.alert}>{actionError}</p>}
+        {isSeller && <SellerControls product={product} onStatusChange={changeStatus} onDelete={deleteProduct} />}
+        <ErrorAlert message={actionErrorMessage} />
       </article>
     </div>
   )

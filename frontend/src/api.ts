@@ -8,18 +8,32 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(path: string, options: { method?: string; body?: unknown; token?: string | null } = {}): Promise<T> {
-  const headers: Record<string, string> = {}
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
-  if (options.token) headers.Authorization = `Bearer ${options.token}`
-  const res = await fetch(path, {
+interface ApiOptions {
+  method?: string
+  body?: unknown
+  token?: string | null
+}
+
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
     method: options.method ?? 'GET',
-    headers,
+    headers: buildHeaders(options),
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new ApiError(res.status, err.code ?? 'UNKNOWN', err.message ?? '요청에 실패했습니다')
-  }
-  return res.status === 204 ? (undefined as T) : res.json()
+  if (!response.ok) throw await toApiError(response)
+  return response.status === 204 ? (undefined as T) : response.json()
+}
+
+function buildHeaders({ body, token }: ApiOptions): Record<string, string> {
+  const headers: Record<string, string> = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (token) headers.Authorization = `Bearer ${token}`
+  return headers
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  const body = await response.json().catch(() => ({}))
+  return new ApiError(response.status, body.code ?? 'UNKNOWN', body.message ?? '요청에 실패했습니다')
 }
