@@ -1,7 +1,17 @@
 package com.marketplace.product;
 
 import com.marketplace.user.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.Instant;
 
 @Entity
@@ -45,24 +55,51 @@ public class Product {
 		this.price = price;
 	}
 
-	public void update(String title, String description, int price) {
-		this.title = title;
-		this.description = description;
-		this.price = price;
+	public void revise(String newTitle, String newDescription, int newPrice) {
+		this.title = newTitle;
+		this.description = newDescription;
+		this.price = newPrice;
+		markUpdatedNow();
+	}
+
+	public void changeStatus(ProductStatus newStatus) {
+		this.status = newStatus;
+		markUpdatedNow();
+	}
+
+	private void markUpdatedNow() {
 		this.updatedAt = Instant.now();
 	}
 
-	public void changeStatus(ProductStatus status) {
-		this.status = status;
-		this.updatedAt = Instant.now();
+	public Long getId() {
+		return id;
 	}
 
-	public Long getId() { return id; }
-	public User getSeller() { return seller; }
-	public String getTitle() { return title; }
-	public String getDescription() { return description; }
-	public int getPrice() { return price; }
-	public ProductStatus getStatus() { return status; }
-	public Instant getCreatedAt() { return createdAt; }
-	public Instant getUpdatedAt() { return updatedAt; }
+	public User getSeller() {
+		return seller;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public int getPrice() {
+		return price;
+	}
+
+	public ProductStatus getStatus() {
+		return status;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public Instant getUpdatedAt() {
+		return updatedAt;
+	}
 }

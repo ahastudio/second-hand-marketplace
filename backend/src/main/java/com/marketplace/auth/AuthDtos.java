@@ -1,10 +1,12 @@
 package com.marketplace.auth;
 
+import com.marketplace.user.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public final class AuthDtos {
+
 	private AuthDtos() {
 	}
 
@@ -16,6 +18,10 @@ public final class AuthDtos {
 	}
 
 	public record UserResponse(Long id, String email, String nickname) {
+
+		static UserResponse from(User user) {
+			return new UserResponse(user.getId(), user.getEmail(), user.getNickname());
+		}
 	}
 
 	public record LoginResponse(String token, UserResponse user) {

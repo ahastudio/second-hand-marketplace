@@ -26,6 +26,9 @@ class AuthApiTest {
 	@Autowired
 	MockMvc mvc;
 
+	@Autowired
+	JwtService jwtService;
+
 	private String email() {
 		return "u-" + UUID.randomUUID() + "@example.com";
 	}
@@ -100,5 +103,34 @@ class AuthApiTest {
 	@Test
 	void me_without_token_returns_401() throws Exception {
 		mvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void login_with_unknown_email_returns_401_like_a_wrong_password() throws Exception {
+		mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"%s\",\"password\":\"password123\"}".formatted(email())))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
+			.andExpect(jsonPath("$.message").value("이메일 또는 비밀번호가 올바르지 않습니다"));
+	}
+
+	@Test
+	void me_with_token_of_unknown_user_returns_401() throws Exception {
+		String tokenOfDeletedUser = jwtService.issueToken(Long.MAX_VALUE);
+		mvc.perform(get("/api/me").header("Authorization", "Bearer " + tokenOfDeletedUser))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+	}
+
+	@Test
+	void non_bearer_authorization_header_is_treated_as_unauthenticated() throws Exception {
+		mvc.perform(get("/api/me").header("Authorization", "Basic dXNlcjpwYXNz"))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void malformed_bearer_token_is_treated_as_unauthenticated() throws Exception {
+		mvc.perform(get("/api/me").header("Authorization", "Bearer not-a-jwt"))
+			.andExpect(status().isUnauthorized());
 	}
 }

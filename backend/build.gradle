@@ -1,15 +1,22 @@
 plugins {
 	id 'java'
+	id 'jacoco'
+	id 'checkstyle'
 	id 'org.springframework.boot' version '4.1.1'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
+
+// 보안 패치: Spring Boot 4.1.1이 관리하는 버전보다 높은 패치 릴리스로 고정한다.
+ext['tomcat.version'] = '11.0.25'
+ext['jackson-2-bom.version'] = '2.21.7'
+ext['jackson-bom.version'] = '3.1.7'
 
 group = 'com.marketplace'
 version = '0.0.1-SNAPSHOT'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(25)
 	}
 }
 
@@ -26,6 +33,7 @@ dependencies {
 	implementation 'org.flywaydb:flyway-database-postgresql'
 	runtimeOnly 'org.postgresql:postgresql'
 	implementation 'com.auth0:java-jwt:4.5.0'
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.85' // Argon2PasswordEncoder 의존성
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
@@ -37,6 +45,52 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// 로컬 개발·테스트용 JWT 비밀값. 이미 환경변수가 있으면 그 값을 쓴다(운영 이미지에는 포함되지 않는다).
+def devEnvironment = ['APP_JWT_SECRET': 'dev-only-secret-change-me-dev-only-secret']
+
 tasks.named('test') {
 	useJUnitPlatform()
+	devEnvironment.each { k, v -> if (!System.getenv(k)) environment k, v }
+}
+
+tasks.named('bootRun') {
+	devEnvironment.each { k, v -> if (!System.getenv(k)) environment k, v }
+}
+
+checkstyle {
+	toolVersion = '14.3.0'
+	configFile = file('config/checkstyle/checkstyle.xml')
+	maxWarnings = 0
+}
+
+jacoco {
+	toolVersion = '0.8.15'
+}
+
+tasks.named('test') {
+	finalizedBy 'jacocoTestReport'
+}
+
+tasks.named('jacocoTestReport') {
+	dependsOn 'test'
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn 'test'
+	violationRules {
+		rule {
+			limit { counter = 'INSTRUCTION'; minimum = 1.0 }
+			limit { counter = 'BRANCH'; minimum = 1.0 }
+			limit { counter = 'LINE'; minimum = 1.0 }
+			limit { counter = 'METHOD'; minimum = 1.0 }
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn 'jacocoTestCoverageVerification'
 }

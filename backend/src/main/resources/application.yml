@@ -1,0 +1,31 @@
+# 환경별 값은 모두 환경변수로 주입한다. 기본값은 로컬 개발용(개발 DB 25803)뿐이며,
+# 비밀값(APP_JWT_SECRET)은 기본값이 없어 설정하지 않으면 기동에 실패한다.
+spring:
+  application:
+    name: backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:25803/marketplace}
+    username: ${DB_USERNAME:marketplace}
+    password: ${DB_PASSWORD:marketplace}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: ${SERVER_PORT:25801}
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+    include-exception: false
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET}
+    expiration-minutes: 120
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
+  security:
+    login-max-failures: 5
+    login-lock-minutes: 10

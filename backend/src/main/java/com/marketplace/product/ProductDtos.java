@@ -5,8 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.List;
 
 public final class ProductDtos {
+
 	private ProductDtos() {
 	}
 
@@ -30,6 +32,6 @@ public final class ProductDtos {
 		}
 	}
 
-	public record ProductPage(java.util.List<ProductResponse> items, int page, int size, long total) {
+	public record ProductPage(List<ProductResponse> items, int page, int size, long total) {
 	}
 }

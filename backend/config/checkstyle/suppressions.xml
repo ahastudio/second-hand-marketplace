@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+  <!-- 테스트 메서드는 "상황_결과" 형태의 설명형 snake_case 이름을 허용한다 -->
+  <suppress checks="MethodName" files="[\\/]src[\\/]test[\\/]"/>
+  <!-- Spring Boot 진입점 클래스는 main만 가진다 -->
+  <suppress checks="HideUtilityClassConstructor" files="(Test)?BackendApplication\.java"/>
+</suppressions>

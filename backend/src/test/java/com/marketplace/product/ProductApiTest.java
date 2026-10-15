@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.marketplace.TestcontainersConfigurationAccess;
+import com.marketplace.auth.JwtService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,9 @@ class ProductApiTest {
 
 	@Autowired
 	MockMvc mvc;
+
+	@Autowired
+	JwtService jwtService;
 
 	private String tokenFor(String nickname) throws Exception {
 		String email = "p-" + UUID.randomUUID() + "@example.com";
@@ -252,5 +256,35 @@ class ProductApiTest {
 		mvc.perform(patch("/api/products/99999999/status").header("Authorization", "Bearer " + token)
 				.contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"SOLD\"}"))
 			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void create_with_token_of_unknown_user_returns_401() throws Exception {
+		String tokenOfDeletedUser = jwtService.issueToken(Long.MAX_VALUE);
+		mvc.perform(post("/api/products").header("Authorization", "Bearer " + tokenOfDeletedUser)
+				.contentType(MediaType.APPLICATION_JSON).content(BODY))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+	}
+
+	@Test
+	void update_without_description_stores_empty_description() throws Exception {
+		String token = tokenFor("판매왕");
+		int id = createAndGetId(token, "설명 없는 수정");
+		mvc.perform(put("/api/products/" + id).header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"수정\",\"price\":1}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.description").value(""));
+	}
+
+	@Test
+	void list_corrects_out_of_range_page_and_size() throws Exception {
+		mvc.perform(get("/api/products").param("page", "-5").param("size", "0"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.page").value(0))
+			.andExpect(jsonPath("$.size").value(1));
+		mvc.perform(get("/api/products").param("size", "1000"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.size").value(100));
 	}
 }
