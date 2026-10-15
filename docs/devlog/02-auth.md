@@ -1,6 +1,7 @@
 # 02. Phase 1 — F1 인증 (E2E-01)
+
 - 날짜: 2026-10-14
-- E2E 먼저: `frontend/e2e/auth.spec.ts` (가입→로그인→닉네임 / 중복 이메일 / 잘못된 비밀번호 / 로그아웃)
+- E2E 테스트 먼저: `frontend/e2e/auth.spec.ts` (가입→로그인→닉네임 / 중복 이메일 / 잘못된 비밀번호 / 로그아웃)
   - Red: `/signup` 화면이 없어 `getByLabel('이메일').fill` 타임아웃 (4/4 실패)
 - 백엔드(JUnit + MockMvc + Testcontainers) `AuthApiTest` 6개: 가입 201(비밀번호 비노출), 중복 409 `EMAIL_ALREADY_EXISTS`, 검증 400 `VALIDATION_ERROR`, 로그인+`/api/me`, 잘못된 비밀번호 401 `INVALID_CREDENTIALS`, 토큰 없는 `/api/me` 401
   - Red: 엔드포인트 부재로 6개 실패 → 구현 후 Green
@@ -13,7 +14,7 @@
   - Spring Boot 4는 Jackson 3(`tools.jackson`)이고 `AutoConfigureMockMvc`가 `org.springframework.boot.webmvc.test.autoconfigure`로 이동
 - 이슈
   - Vitest는 globals 미사용 시 자동 cleanup이 없어 `test-setup.ts`에 `cleanup()` 추가
-  - E2E 로그아웃 테스트의 경쟁 조건(가입 후 `/login` 이동 미대기) → `toHaveURL` 대기 추가. 앱 버그가 아닌 테스트 버그
-- 포트 변경(사용자 지정): FE 25800, BE 25801, E2E DB 25802 (개발 DB는 5432 유지)
-- 테스트 현황: E2E 5 (smoke 1 + auth 4), Vitest 5, JUnit 7
+  - E2E 테스트 로그아웃 테스트의 경쟁 조건(가입 후 `/login` 이동 미대기) → `toHaveURL` 대기 추가. 앱 버그가 아닌 테스트 버그
+- 당시 포트: FE 25800, BE 25801, E2E 테스트 DB 25802, 개발 DB 5432. 개발 DB는 포트 충돌로 Phase 3에서 25803으로 변경했다([04-list-search.md](04-list-search.md)).
+- 테스트 현황: E2E 테스트 5 (smoke 1 + auth 4), Vitest 5, JUnit 7
 - 다음: Phase 2 — E2E-02/E2E-04(상품 등록·상세) 먼저 작성

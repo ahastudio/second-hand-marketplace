@@ -3,7 +3,7 @@
 현실적인 샘플 데이터(중고 물품 8개, 판매자 3명, 판매중/예약중/판매완료 혼합)로 촬영한 화면이다. 해상도는 2배(retina)이며 데스크톱은 1040px, 모바일은 390px 너비 기준이다.
 
 | 파일 | 화면 |
-|---|---|
+| --- | --- |
 | `01-home.png` | 홈 — 비로그인, 전체 목록 |
 | `02-home-logged-in.png` | 홈 — 로그인 상태(헤더에 상품 등록·닉네임·로그아웃) |
 | `03-search.png` | 검색 결과 ("자전거") |
@@ -19,6 +19,7 @@
 | `13-mobile-detail.png` | 모바일 상세(판매자) |
 
 ## 다시 만들기
+
 개발 DB의 테스트 데이터가 섞이지 않도록, 개발 DB 컨테이너 안에 임시 데모 DB를 만들어 그 DB에 연결한 서버로 촬영한다. 프로젝트의 서버 종료 규칙(`AGENTS.md`)에 따라 `scripts/stop-servers.sh`만 사용한다.
 
 ```bash
@@ -30,4 +31,5 @@ node scripts/capture-screenshots.mjs                      # screenshots/*.png �
 scripts/stop-servers.sh                                   # 데모 서버 종료
 docker compose exec -T postgres psql -U marketplace -d marketplace -c "DROP DATABASE marketplace_demo"
 ```
+
 스크립트는 실행할 때마다 샘플 데이터를 새로 등록하므로, 재촬영 전에는 데모 DB를 새로 만든다(위 절차대로 매번 생성/삭제).

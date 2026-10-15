@@ -1,13 +1,14 @@
 # 07. 마무리 및 회고
-- 날짜: 2026-10-14 (MVP 완료 시점의 스냅샷. 이후 추가 작업과 최신 수치는 [08-polish.md](08-polish.md) 및 [SPEC §6](../02-SPEC.md) 참고 — 현재 E2E 26 · Vitest 23 · JUnit 25)
-- 최종 테스트: E2E 20(Playwright), Vitest 20, JUnit 25 — 모두 Green. E2E는 연속 2회 안정 통과
-- 기능 ↔ E2E 매핑(SPEC §6): F1=E2E-01(auth) · F2=E2E-02(product-create) · F3=E2E-03(product-list) · F4=E2E-04(product-detail + list 카드 클릭) · F5=E2E-05(product-manage) · F6=E2E-06(product-status)
+
+- 날짜: 2026-10-14 (MVP 완료 시점의 스냅샷. 이후 추가 작업과 최신 수치는 [08-polish.md](08-polish.md) 및 [SPEC §6](../02-SPEC.md) 참고 — 현재 E2E 테스트 26 · Vitest 23 · JUnit 25)
+- 최종 테스트: E2E 테스트 20(Playwright), Vitest 20, JUnit 25 — 모두 Green. E2E 테스트는 연속 2회 안정 통과
+- 기능 ↔ E2E 테스트 매핑(SPEC §6): F1=E2E-01(auth) · F2=E2E-02(product-create) · F3=E2E-03(product-list) · F4=E2E-04(product-detail + list 카드 클릭) · F5=E2E-05(product-manage) · F6=E2E-06(product-status)
 - 잘 된 점
-  - 모든 슬라이스를 E2E Red 확인 후 시작. Red 이유가 의도와 일치하는지 매번 확인
+  - 모든 슬라이스를 E2E 테스트 Red 확인 후 시작. Red 이유가 의도와 일치하는지 매번 확인
   - 백엔드는 Testcontainers로 실제 PostgreSQL + Flyway 마이그레이션을 검증
-  - 사전 데이터를 API 헬퍼로 만들어 E2E를 짧고 격리된 상태로 유지(고유 이메일/키워드)
+  - 사전 데이터를 API 헬퍼로 만들어 E2E 테스트를 짧고 격리된 상태로 유지(고유 이메일/키워드)
 - 어려웠던 점
-  - E2E 경쟁 조건 3건(가입 후 이동 미대기, 검색 결과 갱신 전 클릭 등) — 모두 앱이 아닌 테스트 쪽. 자동 재시도하는 `expect`(`toHaveURL`, `toHaveCount`)로 상태 도달을 기다리는 것이 원칙
+  - E2E 테스트 경쟁 조건 3건(가입 후 이동 미대기, 검색 결과 갱신 전 클릭 등) — 모두 앱이 아닌 테스트 쪽. 자동 재시도하는 `expect`(`toHaveURL`, `toHaveCount`)로 상태 도달을 기다리는 것이 원칙
   - 환경: JDK 21 부재(17 사용), Initializr 기본이 Boot 4(Jackson 3, 패키지 이동), 5432 기본 포트 충돌
 - 운영 사고 및 조치: 초기에 `pkill -f` 패턴 종료를 사용 → 의도하지 않은 프로세스까지 종료될 위험. `scripts/stop-servers.sh`(포트+cwd 검증)와 `CLAUDE.md` 규칙으로 방지
 - 알려진 한계(MVP 범위 밖)
@@ -15,4 +16,4 @@
   - JWT는 localStorage 저장(XSS 노출 가능성), 만료 시 자동 로그아웃/갱신 없음
   - 이미지·채팅·결제·찜 없음, 삭제는 물리 삭제
   - 린트 경고 1건(`auth.tsx` fast-refresh)
-- 후속 후보: 목록 페이지네이션 UI, 토큰 만료 처리, 이미지 업로드, CI(GitHub Actions)에서 E2E 실행
+- 후속 후보: 목록 페이지네이션 UI, 토큰 만료 처리, 이미지 업로드, CI(GitHub Actions)에서 E2E 테스트 실행
